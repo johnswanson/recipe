@@ -1,0 +1,10 @@
+version: '2'
+services:
+  datomic:
+    build: ./datomic
+    ports:
+      - "127.0.0.47:4336:4336"
+      - "127.0.0.47:4334:4334"
+      - "127.0.0.47:4335:4335"
+    volumes:
+      - ./datomic/data:/opt/datomic-pro-0.9.5394/data
