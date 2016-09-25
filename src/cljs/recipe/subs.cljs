@@ -2,6 +2,6 @@
   (:require [re-frame.core :refer [reg-sub subscribe]]))
 
 (reg-sub
- :count
+ :github/auth-url
  (fn [db _]
-   (:count db)))
+   (:github/auth-url db)))

@@ -1,3 +1,3 @@
 (ns recipe.db)
 
-(def default-value {:count 0})
+(def default-value {})

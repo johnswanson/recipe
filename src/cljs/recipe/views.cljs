@@ -4,8 +4,7 @@
 
 (defn app
   []
-  (let [v (subscribe [:count])]
+  (let [auth-url (subscribe [:github/auth-url])]
     (fn []
-      [:div "howdy hey, " @v
-       [:button {:on-click #(dispatch [:inc])} "clickme"]])))
+      [:a {:href @auth-url} "login"])))
 

@@ -51,7 +51,7 @@
                          :as req}
          (let [access-token (recipe.github/access-token code)
                user (recipe.github/user access-token)]
-           (recipe.datomic/add-or-update-user! (:db-conn req) user access-token)
+           (recipe.datomic/add-or-update-user! (:conn db) user access-token)
            {:status 307
             :headers {"Location" "/"}
             :body ""

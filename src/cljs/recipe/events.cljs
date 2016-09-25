@@ -26,7 +26,7 @@
 (reg-event-db
  :success-initial-query
  (fn [db [_ reply]]
-   (assoc db :count 100)))
+   (assoc db :github/auth-url reply)))
 
 (reg-event-fx
  :fail-initial-query
@@ -43,9 +43,4 @@
  (fn [_ _]
    {:db (-> default-value)
     :async-flow (boot-flow)}))
-
-(reg-event-db
- :inc
- (fn [db _]
-   (update-in db [:count] inc)))
 
