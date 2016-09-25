@@ -60,12 +60,25 @@
 
 (def site (-> site-defaults (assoc-in [:static :resources] "/public")))
 
+(defmulti handle-event #(first (:event %)))
+
+(defmethod handle-event :default [{:keys [?reply-fn event]}]
+  (when ?reply-fn (?reply-fn {:unhandled-event event})))
+
+(defmulti read first)
+(defmethod read :github/auth-url [_] recipe.github/auth-url)
+
+(defmethod handle-event :app/query [ev-msg]
+  (let [{:keys [event id ?data ring-req ?reply-fn send-fn]} ev-msg
+        [id query] event]
+    (when (and ?reply-fn query)
+      (?reply-fn (read query)))))
+
 (defn sente-handler [{:keys [db]}]
   (fn [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
     (let [session (:session ring-req)
           headers (:headers ring-req)
-          uid (:uid session)
-          [id data :as ev] event]
+          uid (:uid session)]
       (println "Session: " session)
-      (match [id data]
-             :else nil))))
+      (handle-event ev-msg))))
+

@@ -3,7 +3,7 @@
             [devtools.core :as devtools]))
 
 (defonce runonce
-  [(devtools/install!)
+  [(devtools/install! [:formatters :hints :async])
    (enable-console-print!)])
 
 (recipe.app/main)

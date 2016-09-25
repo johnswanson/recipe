@@ -19,3 +19,4 @@
 .lein-env
 resources/public/css/
 .nrepl-history
+profiles.clj

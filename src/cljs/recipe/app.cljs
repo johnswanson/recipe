@@ -10,6 +10,6 @@
 
 (defn ^:export main
   []
-  (dispatch-sync [:initialize-db])
+  (dispatch-sync [:boot])
   (reagent/render [recipe.views/app]
                   (.getElementById js/document "app")))
