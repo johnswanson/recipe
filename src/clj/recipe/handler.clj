@@ -65,14 +65,17 @@
 (defmethod handle-event :default [{:keys [?reply-fn event]}]
   (when ?reply-fn (?reply-fn {:unhandled-event event})))
 
-(defmulti read first)
-(defmethod read :github/auth-url [_] recipe.github/auth-url)
+(defmulti read (fn [x & args] x))
+(defmethod read [:github/auth-url] [& args] recipe.github/auth-url)
+(defmethod read [:app/logged-in-user] [_ & [{:keys [ring-req]}]]
+  (let [session (:session ring-req)]
+    {:user/username session}))
 
 (defmethod handle-event :app/query [ev-msg]
-  (let [{:keys [event id ?data ring-req ?reply-fn send-fn]} ev-msg
-        [id query] event]
+  (let [{:keys [event id ?data ring-req ?reply-fn send-fn db]} ev-msg
+        [_ query] event]
     (when (and ?reply-fn query)
-      (?reply-fn (read query)))))
+      (?reply-fn (read query ev-msg)))))
 
 (defn sente-handler [{:keys [db]}]
   (fn [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
@@ -80,5 +83,5 @@
           headers (:headers ring-req)
           uid (:uid session)]
       (println "Session: " session)
-      (handle-event ev-msg))))
+      (handle-event (assoc ev-msg :db db)))))
 
