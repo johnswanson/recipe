@@ -10,9 +10,8 @@
   []
   {:first-dispatch [:ws-connect]
    :rules [{:when :seen? :events :success-ws-connect :dispatch [:do-initial-query]}
-           {:when :seen-all-of? :events [:success-get-auth-url :success-get-user] :dispatch [:success-initial-query]}
            {:when :seen-any-of? :events [:fail-get-auth-url :fail-get-user] :dispatch [:fail-initial-query]}
-           {:when :seen? :events :success-initial-query :dispatch [:success-boot] :halt? true}
+           {:when :seen-all-of? :events [:success-get-auth-url :success-get-user] :dispatch [:success-boot] :halt? true}
            {:when :seen-any-of?
             :events [:fail-ws-connect :fail-initial-query]
             :dispatch [:fail-boot] :halt? true}]})
