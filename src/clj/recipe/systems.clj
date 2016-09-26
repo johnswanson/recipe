@@ -41,11 +41,9 @@
      :http-ip (c :http-ip)}))
 
 (defn routes [_]
-  (log/debugf "in routes")
   (component/using (new-endpoint ring-handler) [:db]))
 
 (defn db [{:keys [db-host db-port db-database db-storage]}]
-  (log/debugf "in db")
   (new-datomic-db (format "datomic:%s://%s:%d/%s"
                           db-storage
                           db-host
@@ -53,30 +51,25 @@
                           db-database)))
 
 (defn sente-endpoint [_]
-  (log/debugf "in sente-endpoint")
   (component/using
    (new-endpoint sente-routes)
    [:sente]))
 
 (defn sente [_]
-  (log/debugf "in sente")
   (component/using
    (new-channel-sockets sente-handler sente-web-server-adapter {:wrap-component? true})
    [:db]))
 
 (defn middleware [_]
-  (log/debugf "in middleware")
   (new-middleware {:middleware [[wrap-defaults :defaults]]
                    :defaults site}))
 
 (defn handler [_]
-  (log/debugf "in handler")
   (component/using
    (new-handler)
    [:sente-endpoint :routes :middleware]))
 
 (defn http [{:keys [http-port http-ip]}]
-  (log/debugf "in http")
   (component/using
    (new-web-server nil nil {:port http-port
                             :ip http-ip})
