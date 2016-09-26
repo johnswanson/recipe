@@ -60,16 +60,16 @@
 
 (def site (-> site-defaults (assoc-in [:static :resources] "/public")))
 
+(defmulti read (fn [x & args] x))
+(defmethod read [:github/auth-url] [& args] recipe.github/auth-url)
+(defmethod read [:app/logged-in-user] [_ & [{:keys [ring-req db]}]]
+  (let [uid (:session ring-req)]
+    (recipe.datomic/get-user (:conn db) uid)))
+
 (defmulti handle-event #(first (:event %)))
 
 (defmethod handle-event :default [{:keys [?reply-fn event]}]
   (when ?reply-fn (?reply-fn {:unhandled-event event})))
-
-(defmulti read (fn [x & args] x))
-(defmethod read [:github/auth-url] [& args] recipe.github/auth-url)
-(defmethod read [:app/logged-in-user] [_ & [{:keys [ring-req]}]]
-  (let [uid (:session ring-req)]
-    (recipe.datomic/get-user (:conn (:db ev-msg)) uid)))
 
 (defmethod handle-event :app/query [ev-msg]
   (let [{:keys [event id ?data ring-req ?reply-fn send-fn db]} ev-msg
@@ -77,11 +77,12 @@
     (when (and ?reply-fn query)
       (?reply-fn (read query ev-msg)))))
 
+(defn wrap-db
+  "Sorta-middleware for the ev-msg, just adds the `db` to the ev-msg."
+  [handler db]
+  (fn [ev-msg]
+    (handler (assoc ev-msg :db db))))
+
 (defn sente-handler [{:keys [db]}]
-  (fn [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-    (let [session (:session ring-req)
-          headers (:headers ring-req)
-          uid (:uid session)]
-      (println "Session: " session)
-      (handle-event (assoc ev-msg :db db)))))
+  (wrap-db handle-event db))
 
