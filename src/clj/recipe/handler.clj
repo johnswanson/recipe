@@ -68,8 +68,8 @@
 (defmulti read (fn [x & args] x))
 (defmethod read [:github/auth-url] [& args] recipe.github/auth-url)
 (defmethod read [:app/logged-in-user] [_ & [{:keys [ring-req]}]]
-  (let [session (:session ring-req)]
-    {:user/username session}))
+  (let [uid (:session ring-req)]
+    (recipe.datomic/get-user (:conn (:db ev-msg)) uid)))
 
 (defmethod handle-event :app/query [ev-msg]
   (let [{:keys [event id ?data ring-req ?reply-fn send-fn db]} ev-msg
