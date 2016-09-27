@@ -42,15 +42,15 @@
      [:script {:src "/js/compiled_cards/app.js"}]
      [:script {:src "https://use.fontawesome.com/efa7507d6f.js"}]]]))
 
-(defn ring-handler [{:keys [db]}]
+(defn ring-handler [{:keys [db github]}]
   (-> (routes
        (GET "/" [] (index))
        (GET "/cards" [] (cards))
        (GET "/logout" [] logout)
        (GET "/callback" {{:keys [code]} :params
                          :as req}
-         (let [access-token (recipe.github/access-token code)
-               user (recipe.github/user access-token)]
+         (let [access-token (recipe.github/access-token github code)
+               user (recipe.github/user github access-token)]
            (recipe.datomic/add-or-update-user! (:conn db) user access-token)
            {:status 307
             :headers {"Location" "/"}
@@ -61,7 +61,7 @@
 (def site (-> site-defaults (assoc-in [:static :resources] "/public")))
 
 (defmulti read (fn [x & args] x))
-(defmethod read [:github/auth-url] [& args] recipe.github/auth-url)
+(defmethod read [:github/auth-url] [_ & [{:keys [github]}]] (recipe.github/auth-url github))
 (defmethod read [:app/logged-in-user] [_ & [{:keys [ring-req db]}]]
   (let [uid (:session ring-req)]
     (recipe.datomic/get-user (:conn db) uid)))
@@ -83,6 +83,13 @@
   (fn [ev-msg]
     (handler (assoc ev-msg :db db))))
 
-(defn sente-handler [{:keys [db]}]
-  (wrap-db handle-event db))
+(defn wrap-github
+  [handler github]
+  (fn [ev-msg]
+    (handler (assoc ev-msg :github github))))
+
+(defn sente-handler [{:keys [db github]}]
+  (-> handle-event
+      (wrap-db db)
+      (wrap-github github)))
 
