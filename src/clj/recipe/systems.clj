@@ -11,94 +11,54 @@
              [sente :refer [new-channel-sockets sente-routes]]
              [endpoint :refer [new-endpoint]]
              [handler :refer [new-handler]]
-             [middleware :refer [new-middleware]]]
-            [environ.core :refer [env]]))
+             [middleware :refer [new-middleware]]]))
 
-(defn integer
-  [v]
-  (when v (Integer. v)))
-
-(def dev-defaults
-  {:db-host "127.0.0.47"
-   :db-port "4334"
-   :db-database "recipe"
-   :db-storage "dev"
-   :http-port "8080"
-   :http-ip "127.0.0.1"
-   :github-client-id nil
-   :github-client-secret nil
-   :github-redirect-uri "http://localhost:8080/callback"})
-
-(defn config [defaults k & {:keys [as]
-                            :or {as identity}}]
-  (cond
-    (env k) (as (env k))
-    (defaults k) (as (defaults k))))
-
-(def dev-config
-  (let [c (partial config dev-defaults)]
-    {:db-host (c :db-host)
-     :db-port (c :db-port :as integer)
-     :db-database (c :db-database)
-     :db-storage (c :db-storage)
-     :http-port (c :http-port :as integer)
-     :http-ip (c :http-ip)
-     :github-client-id (c :github-client-id)
-     :github-client-secret (c :github-client-secret)
-     :github-redirect-uri (c :github-redirect-uri)}))
-
-(defn routes [_]
+(defn routes []
   (component/using (new-endpoint ring-handler) [:db :github]))
 
-(defn db [{:keys [db-host db-port db-database db-storage]}]
+(defn db [{:keys [host port database storage]}]
   (new-datomic-db (format "datomic:%s://%s:%d/%s"
-                          db-storage
-                          db-host
-                          db-port
-                          db-database)))
+                          storage
+                          host
+                          port
+                          database)))
 
-(defn sente-endpoint [_]
+(defn sente-endpoint []
   (component/using
    (new-endpoint sente-routes)
    [:sente]))
 
-(defn sente [_]
+(defn sente []
   (component/using
    (new-channel-sockets sente-handler sente-web-server-adapter {:wrap-component? true})
    [:db :github]))
 
-(defn middleware [_]
+(defn middleware []
   (new-middleware {:middleware [[wrap-defaults :defaults]]
                    :defaults site}))
 
-(defn handler [_]
+(defn handler []
   (component/using
    (new-handler)
    [:sente-endpoint :routes :middleware]))
 
-(defn http [{:keys [http-port http-ip]}]
+(defn http [config]
   (component/using
-   (new-web-server nil nil {:port http-port
-                            :ip http-ip})
+   (new-web-server nil nil config)
    [:handler]))
 
 (defn github [config]
-  (recipe.github/new-api {:client-id (:github-client-id config)
-                          :client-secret (:github-client-secret config)
-                          :redirect-uri (:github-redirect-uri config)}))
+  (recipe.github/new-api config))
 
 (defn base-system
   [config]
-  {:db (db config)
-   :routes (routes config)
-   :sente-endpoint (sente-endpoint config)
-   :sente (sente config)
-   :middleware (middleware config)
-   :handler (handler config)
-   :github (github config)
-   :http (http config)})
+  {:db (db (:db config))
+   :routes (routes)
+   :sente-endpoint (sente-endpoint)
+   :sente (sente)
+   :middleware (middleware)
+   :handler (handler)
+   :github (github (:github config))
+   :http (http (:http config))})
 
-(def dev-system (base-system dev-config))
-
-(def prod-system (base-system dev-config))
 

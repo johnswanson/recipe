@@ -17,36 +17,15 @@
             [figwheel-sidecar.repl-api :as ra]
             [system.components
              [watcher :refer [new-watcher]]]
-            [recipe.systems]))
+            [recipe.systems]
+            [recipe.config :refer [dev-config]]
+            [recipe.datomic]))
 
 (log/set-level! :debug)
 (reset! sente/debug-mode?_ false)
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
-
-(def figwheel-config
-  {:figwheel-options {:css-dirs ["resources/public/css"]}
-   :build-ids        ["dev" "cards"]
-   :all-builds
-   [{:id           "cards"
-     :figwheel     {:devcards true}
-     :source-paths ["src/cljs"]
-     :compiler     {:main                 'cards.core
-                    :asset-path           "/js/compiled_cards"
-                    :output-to            "resources/public/js/compiled_cards/app.js"
-                    :output-dir           "resources/public/js/compiled_cards"
-                    :source-map           true}}
-    {:id           "dev"
-     :figwheel     true
-     :source-paths ["src/cljs"]
-     :compiler     {:main                 'recipe.dev
-                    :asset-path           "/js/compiled"
-                    :output-to            "resources/public/js/compiled/app.js"
-                    :output-dir           "resources/public/js/compiled"
-                    :optimizations        :none
-                    :source-map           true}}]})
-
 
 (defrecord Figwheel [config]
   component/Lifecycle
@@ -55,9 +34,11 @@
   (stop [component]
     (dissoc component :figwheel)))
 
-(def figwheel (->Figwheel figwheel-config))
+(defn figwheel [config]
+  (->Figwheel config))
 
-(def scss-compiler
+(defn scss-compiler
+  []
   (new-watcher ["./resources/scss"]
                (fn [action f]
                  (log/infof "%s %s, rebuilding app.css" action f)
@@ -70,9 +51,10 @@
                  (log/info "app.css build complete"))))
 
 (defn dev-system []
-  (let [sys (-> recipe.systems/dev-system
-                (assoc :figwheel figwheel)
-                (assoc :scss-compiler scss-compiler))]
+  (log/infof "Starting with config:\n%s" (with-out-str (pprint dev-config)))
+  (let [sys (-> (recipe.systems/base-system dev-config)
+                (assoc :figwheel (figwheel (:figwheel dev-config)))
+                (assoc :scss-compiler (scss-compiler)))]
     (apply component/system-map (flatten (into [] sys)))))
 
 (reloaded.repl/set-init! dev-system)
