@@ -9,7 +9,9 @@
                                             [binaryage/devtools "0.8.2"]
                                             [figwheel-sidecar "0.5.0-SNAPSHOT" :scope "test"]
                                             [devcards "0.2.1-7"]
+                                            [com.cemerick/piggieback "0.2.1"]
                                             [reloaded.repl "0.2.1"]]}]}
+  :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
   :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"
                                    :creds :gpg}}
   :dependencies [[org.clojure/clojure "1.8.0"]

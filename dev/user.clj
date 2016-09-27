@@ -50,10 +50,17 @@
                      "resources/public/css/app.css")
                  (log/info "app.css build complete"))))
 
+;; We keep this separate from the overall system in order to start it with CIDER.
+(def figwheel-component
+  (figwheel (:figwheel dev-config)))
+
+(defn cljs-repl-start []
+  (component/start figwheel-component)
+  (ra/cljs-repl))
+
 (defn dev-system []
   (log/infof "Starting with config:\n%s" (with-out-str (pprint dev-config)))
   (let [sys (-> (recipe.systems/base-system dev-config)
-                (assoc :figwheel (figwheel (:figwheel dev-config)))
                 (assoc :scss-compiler (scss-compiler)))]
     (apply component/system-map (flatten (into [] sys)))))
 
