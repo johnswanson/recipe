@@ -23,7 +23,6 @@
 (reg-fx
  :ws-connect
  (fn ws-connect [_]
-   (log/info "Sente connection started...")
    (if-let [{:keys [chsk ch-recv send-fn state]}
             (sente/make-channel-socket! "/chsk" {:type :auto})]
      ;; if we get a successful event on the channel, then dispatch successful
@@ -36,16 +35,13 @@
                    :chsk-state state})
        (go-loop []
          (when-let [v (<! ch-recv)]
-           (log/infof "Received %s" (:event v))
            (dispatch [::ws-received v])
            (recur))))
      (dispatch [:failure-ws-connect]))))
 
 (defn run-query! [{:keys [query on-success on-failure timeout]}]
-  (log/infof "Websocket query: %s" query)
   (if-let [f (:chsk-send! @ws)]
     (f [:app/query query] timeout (fn [reply]
-                                    (log/infof "%s" reply)
                                     (if (sente/cb-success? reply)
                                       (dispatch (conj on-success reply))
                                       (dispatch (conj on-failure reply)))))

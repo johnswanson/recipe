@@ -24,11 +24,9 @@
    :db/id (d/tempid :db.part/user)})
 
 (defn add-or-update-user! [conn gh-user access-token]
-  (log/debugf "tx: %s" (pr-str (-> gh-user (user) (assoc :user/access-token access-token))))
   (d/transact conn [(-> gh-user
                         (user)
                         (assoc :user/access-token access-token))]))
 
 (defn get-user [conn username]
   (d/pull (d/db conn) '[*] [:user/username username]))
-
