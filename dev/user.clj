@@ -21,6 +21,8 @@
             [recipe.config :refer [dev-config]]
             [recipe.datomic]))
 
+(clojure.tools.namespace.repl/set-refresh-dirs "clj")
+
 (log/set-level! :debug)
 (reset! sente/debug-mode?_ false)
 
@@ -65,3 +67,4 @@
     (apply component/system-map (flatten (into [] sys)))))
 
 (reloaded.repl/set-init! dev-system)
+
