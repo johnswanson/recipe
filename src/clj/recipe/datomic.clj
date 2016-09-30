@@ -29,4 +29,7 @@
                         (assoc :user/access-token access-token))]))
 
 (defn get-user [conn username]
-  (d/pull (d/db conn) '[*] [:user/username username]))
+  (let [res (d/pull (d/db conn) '[*] [:user/username username])]
+    (when-let [id (:db/id res)]
+      (assoc res :user/id id))))
+
