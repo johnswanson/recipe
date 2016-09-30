@@ -1,23 +1,27 @@
 (ns recipe.subs
   (:require [re-frame.core :refer [reg-sub subscribe]]))
 
-(reg-sub
- :github/auth-url
- (fn [db _]
-   (:github/auth-url db)))
+(defn github-auth-url
+  [db _]
+  (:github/auth-url db))
 
-(reg-sub
- :app/logged-in-user
- (fn [db _]
-   (:app/logged-in-user db)))
+(reg-sub :github/auth-url github-auth-url)
 
-(reg-sub
- :user/username
- (fn [db _]
-   (let [user (subscribe [:app/logged-in-user])]
-     (:user/username @user))))
+(defn logged-in-user
+  [db _]
+  (when-let [user-id (:recipe.db/logged-in-user db)]
+    (get-in db [:recipe.db/by-id user-id])))
 
-(reg-sub
- :user/logged-in?
- (fn [db _]
-   @(subscribe [:user/username])))
+(reg-sub :app/logged-in-user logged-in-user)
+
+(defn recipe-ids
+  [db _]
+  (:recipes.db/recipes db))
+
+(reg-sub :app/recipes recipe-ids)
+
+(defn recipe
+  [db [_ id]]
+  (get-in db [:recipe.db/by-id id]))
+
+(reg-sub :app/recipe recipe)

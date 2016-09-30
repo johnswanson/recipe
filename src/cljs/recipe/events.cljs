@@ -1,10 +1,30 @@
 (ns recipe.events
-  (:require [recipe.db :refer [default-value]]
+  (:require [recipe.db :refer [default-value valid-db-schema? valid-schema?]]
             [recipe.ws :as ws]
             [day8.re-frame.async-flow-fx]
             [day8.re-frame.http-fx]
-            [re-frame.core :refer [reg-event-db reg-event-fx inject-cofx path trim-v]]
-            ))
+            [re-frame.core :refer [inject-cofx path trim-v after debug]]
+            [re-frame.db :as db]))
+
+(defn reg-event-db
+  ([id handler-fn]
+   (reg-event-db id nil handler-fn))
+  ([id interceptors handler-fn]
+   (re-frame.core/reg-event-db
+    id
+    [(when ^boolean goog.DEBUG debug)
+     (when ^boolean goog.DEBUG (after valid-schema?))]
+    handler-fn)))
+
+(defn reg-event-fx
+  ([id handler-fn]
+   (reg-event-fx id nil handler-fn))
+  ([id interceptors handler-fn]
+   (re-frame.core/reg-event-fx
+    id
+    [(when ^boolean goog.DEBUG debug)
+     (when ^boolean goog.DEBUG (after valid-db-schema?))]
+    handler-fn)))
 
 (defn boot-flow
   []
@@ -17,9 +37,23 @@
             :dispatch [:fail-boot] :halt? true}]})
 
 (reg-event-db
+ :success-ws-connect
+ (fn [db _]
+   db))
+
+(reg-event-db
+ :success-boot
+ (fn [db _]
+   db))
+
+(reg-event-db
  :success-get-user
  (fn [db [_ user]]
-   (assoc db :app/logged-in-user user)))
+   (if user
+     (-> db
+         (assoc-in [:recipe.db/by-id (:user/id user)] user)
+         (assoc :recipe.db/logged-in-user (:user/id user)))
+     db)))
 
 (reg-event-fx
  :do-initial-query
@@ -51,6 +85,6 @@
 (reg-event-fx
  :boot
  (fn [_ _]
-   {:db (-> default-value)
+   {:db default-value
     :async-flow (boot-flow)}))
 
