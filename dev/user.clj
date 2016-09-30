@@ -21,7 +21,7 @@
             [recipe.config :refer [dev-config]]
             [recipe.datomic]))
 
-(clojure.tools.namespace.repl/set-refresh-dirs "clj")
+(clojure.tools.namespace.repl/set-refresh-dirs "dev" "src/clj")
 
 (log/set-level! :debug)
 (reset! sente/debug-mode?_ false)
