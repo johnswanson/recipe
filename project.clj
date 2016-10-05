@@ -30,6 +30,7 @@
                  [oauth-clj "0.1.15"]
                  [http-kit "2.2.0"]
                  [org.apache.httpcomponents/httpclient "4.5.2"]
+                 [enlive "1.1.6"]
                  [ring/ring-defaults "0.2.1"]
                  [ring/ring-anti-forgery "1.0.1"]
                  [cheshire "5.6.3"]
