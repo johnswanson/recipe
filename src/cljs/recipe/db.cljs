@@ -2,35 +2,41 @@
   (:require [clojure.spec :as s]
             [taoensso.timbre :as log]))
 
+(defn tempid [] -1)
+
 (s/def :recipe/id integer?)
 (s/def :recipe/ingredient string?)
-(s/def :recipe/step string?)
 (s/def :recipe/description string?)
 (s/def :recipe/thumbnail-url string?)
 (s/def :recipe/title string?)
 (s/def :recipe/ingredients (s/coll-of :recipe/ingredient))
-(s/def :recipe/steps (s/coll-of :recipe/step))
+(s/def :recipe/procedure string?)
 
 (s/def ::recipe
   (s/keys :req [:recipe/title
                 :recipe/ingredients
-                :recipe/steps
-                :recipe/description
-                :recipe/owner
-                :recipe/id]
-          :opt [:recipe/thumbnail-url]))
+                :recipe/procedure
+                :recipe/description]
+          :opt [:recipe/owner
+                :recipe/id
+                :recipe/thumbnail-url]))
 
+(s/def ::editing-recipe ::recipe)
+
+
+(s/def :recipes/by-id (s/map-of :recipe/id ::recipe))
+
+(s/def ::recipes (s/coll-of :recipe/id))
 (s/def :user/id integer?)
-
-(s/def ::by-id (s/map-of integer? (s/or ::recipe ::user)))
-
-(s/def ::recipes (s/coll-of ::recipe))
 (s/def ::user (s/keys :req [:user/id :user/username]))
 
-(s/def ::logged-in-user (s/nilable :user/id))
+(s/def ::logged-in-user (s/nilable ::user))
 
 (s/def ::db
-  (s/keys :opt [::logged-in-user ::recipes ::by-id]))
+  (s/keys :opt [::logged-in-user
+                ::recipes
+                :recipes/by-id
+                ::editing-recipe]))
 
 (defn valid-schema?
   [db]
@@ -51,4 +57,3 @@
       (s/explain ::db db))))
 
 (def default-value {})
-

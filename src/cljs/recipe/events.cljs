@@ -3,8 +3,9 @@
             [recipe.ws :as ws]
             [day8.re-frame.async-flow-fx]
             [day8.re-frame.http-fx]
-            [re-frame.core :refer [inject-cofx path trim-v after debug]]
-            [re-frame.db :as db]))
+            [re-frame.core :refer [inject-cofx path trim-v after debug console]]
+            [re-frame.db :as db]
+            [clojure.spec :as s]))
 
 (defn reg-event-db
   ([id handler-fn]
@@ -12,8 +13,10 @@
   ([id interceptors handler-fn]
    (re-frame.core/reg-event-db
     id
-    [(when ^boolean goog.DEBUG debug)
-     (when ^boolean goog.DEBUG (after valid-schema?))]
+    [trim-v
+     (when ^boolean goog.DEBUG debug)
+     (when ^boolean goog.DEBUG (after valid-schema?))
+     interceptors]
     handler-fn)))
 
 (defn reg-event-fx
@@ -22,8 +25,10 @@
   ([id interceptors handler-fn]
    (re-frame.core/reg-event-fx
     id
-    [(when ^boolean goog.DEBUG debug)
-     (when ^boolean goog.DEBUG (after valid-db-schema?))]
+    [trim-v
+     (when ^boolean goog.DEBUG debug)
+     (when ^boolean goog.DEBUG (after valid-db-schema?))
+     interceptors]
     handler-fn)))
 
 (defn boot-flow
@@ -46,14 +51,14 @@
  (fn [db _]
    db))
 
+(defn success-get-user [db [user]]
+  (if user
+    (assoc db :recipe.db/logged-in-user user)
+    db))
+
 (reg-event-db
  :success-get-user
- (fn [db [_ user]]
-   (if user
-     (-> db
-         (assoc-in [:recipe.db/by-id (:user/id user)] user)
-         (assoc :recipe.db/logged-in-user (:user/id user)))
-     db)))
+ success-get-user)
 
 (reg-event-fx
  :do-initial-query
@@ -69,12 +74,12 @@
 
 (reg-event-db
  :success-get-auth-url
- (fn [db [_ reply]]
+ (fn [db [reply]]
    (assoc db :github/auth-url reply)))
 
 (reg-event-fx
  :fail-initial-query
- (fn [fx [_ reply]]
+ (fn [fx [reply]]
    fx))
 
 (reg-event-fx
@@ -88,3 +93,35 @@
    {:db default-value
     :async-flow (boot-flow)}))
 
+(defn update-editing-recipe
+  [db [k value]]
+  (let [recipe (if-let [existing (get-in db [:recipe.db/editing-recipe])]
+                 (assoc existing k value)
+                 {:recipe/id (recipe.db/tempid)
+                  k value})]
+    (assoc db :recipe.db/editing-recipe recipe)))
+
+(reg-event-db
+ :update-editing-recipe
+ update-editing-recipe)
+
+(defn save-recipe
+  [{:keys [db]} _]
+  (let [id (recipe.db/tempid)
+        recipe (get db :recipe.db/editing-recipe)]
+    {:db (-> db
+             (dissoc :recipe.db/editing-recipe)
+             (assoc-in [:recipes/by-id id] recipe)
+             (update-in [:recipe.db/recipes] #(into [] (conj % id))))
+     :ws-query [{:query [:save-recipe recipe]
+                 :on-success [:success-save-recipe]
+                 :on-failure [:fail-save-recipe]
+                 :timeout 2000}]}))
+
+(defn success-save-recipe
+  [db {:keys [db/id]}]
+  db)
+
+(defn fail-save-recipe
+  [db {:keys [db/id]}]
+  db)
