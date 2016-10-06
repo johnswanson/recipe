@@ -1,41 +1,80 @@
 (ns recipe.extract
   (:require [org.httpkit.client :as http]
             [net.cgrand.enlive-html :as html]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [datomic-schema.schema :as s]))
 
-(defn smitten-kitchen-previous [html]
-  (first
-   (html/attr-values
-    (first (html/select html [[:a (html/attr= :rel "prev")]]))
-    :href)))
+(defn host [url] (.getHost url))
 
-(defn images [html]
-  (map
-   #(html/attr-values % :src)
-   (html/select html [:img])))
+(defn clean-str [s]
+  (-> s
+      (str/trim)
+      (str/replace (-> 160 char str) " ")
+      (str/replace #"\s+" " ")))
+
+(defprotocol IExtractable
+  "Something we can extract recipe data from"
+  (images [this])
+  (ingredients [this])
+  (title [this])
+  (procedure [this])
+  (notes [this]))
+
+(defrecord SmittenKitchenExtractable [html]
+  IExtractable
+  (images [this]
+    (map
+     #(first (html/attr-values % :src))
+     (html/select html [:img])))
+  (ingredients [this]
+    (map #(-> % html/text clean-str) (html/select html [:li.jetpack-recipe-ingredient])))
+  (title [this]
+    (clean-str (html/text (first (html/select html [:h1.entry-title])))))
+  (procedure [this]
+    (clean-str (str/join (map html/text (html/select html [:div.jetpack-recipe-directions])))))
+  (notes [this]
+    (clean-str (str/join (map html/text (html/select html [:div.jetpack-recipe-notes]))))))
+
+(defrecord SeriousEatsExtractable [html]
+  IExtractable
+  (images [this]
+    (map #(first (html/attr-values % :src))
+         (html/select html [:img])))
+  (ingredients [this]
+    (map #(-> % html/text clean-str) (html/select html [:li.ingredient])))
+  (title [this]
+    (-> html
+        (html/select [:h1.recipe-title])
+        (first)
+        (html/text)
+        (clean-str)))
+  (procedure [this]
+    (clean-str (str/join (map html/text (html/select html [:div.recipe-procedure-text])))))
+  (notes [this]
+    (clean-str
+     (str/join
+      (map html/text (html/select html [:div.recipe-introduction-body]))))))
+
+(def serious-eats? (partial re-find #"seriouseats\.com"))
+(def smitten-kitchen?  (partial re-find #"smittenkitchen\.com"))
+
+(defn site [url]
+  (cond
+    (serious-eats? url) :serious-eats
+    (smitten-kitchen? url) :smitten-kitchen))
 
 (defn html [url]
   (html/html-resource (java.net.URL. url)))
 
-(defn ingredients [html]
-  (map html/text (html/select html [:li.jetpack-recipe-ingredient])))
-
-(defn notes [html]
-  (str/join (map html/text (html/select html [:div.jetpack-recipe-notes]))))
-
-(defn procedure [html]
-  (str/join (map html/text (html/select html [:div.jetpack-recipe-directions]))))
-
-(defn title [html]
-  (html/text (first (html/select html [:h1.entry-title]))))
-
-(defn remove-nbsp [str] (str/replace str (-> 160 char str) " "))
-
+(defn ->extractable [url]
+  (condp = (site url)
+    :serious-eats (->SeriousEatsExtractable (html url))
+    :smitten-kitchen (->SmittenKitchenExtractable (html url))))
 
 (defn parse [url]
-  (let [html (html url)]
-    {:ingredients (ingredients html)
-     :notes (notes html)
-     :procedure (procedure html)
-     :title (title html)
-     :possible-images (images html)}))
+  (when-let [extractable (->extractable url)]
+    {:ingredients (ingredients extractable)
+     :notes (notes extractable)
+     :procedure (procedure extractable)
+     :title (title extractable)
+     :possible-images (images extractable)}))
