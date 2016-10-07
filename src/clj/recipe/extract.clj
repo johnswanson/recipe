@@ -90,6 +90,29 @@
 (defn html [url]
   (html/html-resource (java.net.URL. url)))
 
+(def blacklist #{:script html/comment-node})
+(def whitelist
+  #{:a :b :blockquote :body :code :del :dd :dl :dt
+    :em :h1 :h2 :h3 :i :img :kbd :li :ol :p :pre
+    :s :sup :sub :strong :strike :ul :br :hr :div})
+
+(def not-in-whitelist (html/but whitelist))
+
+(def allowed-attrs #{:src :width :height :alt :title :href})
+(defn clean-attrs
+  [attrs]
+  (select-keys attrs allowed-attrs))
+
+(defn render [node] (apply str (html/emit* node)))
+
+(defn body [{:keys [html]}]
+  (render
+   (-> html
+       (html/select [:html :body])
+       (html/transform [blacklist] (constantly nil))
+       (html/transform [not-in-whitelist] html/text)
+       (html/transform [] #(update-in % [:attrs] clean-attrs)))))
+
 (defn ->extractable [url]
   (condp = (site url)
     :serious-eats (->SeriousEatsExtractable (html url))
@@ -97,8 +120,9 @@
 
 (defn parse [url]
   (when-let [extractable (->extractable url)]
-    {:ingredients (ingredients extractable)
-     :notes (notes extractable)
-     :procedure (procedure extractable)
-     :title (title extractable)
-     :possible-images (images extractable)}))
+    {:import/ingredients (ingredients extractable)
+     :import/notes (notes extractable)
+     :import/procedure (procedure extractable)
+     :import/title (title extractable)
+     :import/possible-images (images extractable)
+     :import/body (body extractable)}))
