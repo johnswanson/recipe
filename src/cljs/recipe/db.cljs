@@ -17,9 +17,23 @@
                 :recipe/ingredients
                 :recipe/procedure
                 :recipe/description]
-          :opt [:recipe/owner
-                :recipe/id
+          :opt [:recipe/id
                 :recipe/thumbnail-url]))
+
+(s/def :import/data
+  (s/keys :req [(s/nilable :recipe/title)
+                (s/nilable :recipe/ingredients)
+                (s/nilable :recipe/procedure)
+                (s/nilable :recipe/description)]))
+
+(s/def :import/error #{})
+
+(s/def :import/url string?)
+
+(s/def ::import
+  (s/keys :opt [:import/error
+                :import/data]))
+(s/def ::imports (s/map-of :import/url ::import))
 
 (s/def ::editing-recipe ::recipe)
 
@@ -36,7 +50,8 @@
   (s/keys :opt [::logged-in-user
                 ::recipes
                 :recipes/by-id
-                ::editing-recipe]))
+                ::editing-recipe
+                ::imports]))
 
 (defn valid-schema?
   [db]

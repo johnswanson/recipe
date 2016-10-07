@@ -41,10 +41,11 @@
 
 (defn run-query! [{:keys [query on-success on-failure timeout]}]
   (if-let [f (:chsk-send! @ws)]
-    (f [:app/query query] timeout (fn [reply]
-                                    (if (sente/cb-success? reply)
-                                      (dispatch (conj on-success reply))
-                                      (dispatch (conj on-failure reply)))))
+    (f query timeout (fn [reply]
+                       (if (and (sente/cb-success? reply)
+                                (nil? (:error reply)))
+                         (dispatch (conj on-success (:result reply)))
+                         (dispatch (conj on-failure reply)))))
     (dispatch on-failure)))
 
 (reg-fx

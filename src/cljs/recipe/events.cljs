@@ -125,3 +125,26 @@
 (defn fail-save-recipe
   [db {:keys [db/id]}]
   db)
+
+(defn start-import-recipe
+  [{:keys [db]} [url]]
+  {:db (assoc-in db [:imports url :status] :pending)
+   :ws-query [{:query [:import/start url]
+               :on-success [:success-import-url url]
+               :on-failure [:fail-import-url url]
+               :timeout 8000}]})
+
+(reg-event-fx :start-import-recipe start-import-recipe)
+
+(defn fail-import-url
+  [db [url error]]
+  (assoc-in db [:recipe.db/imports url :import/error] error))
+
+(reg-event-db :fail-import-url fail-import-url)
+
+(defn success-import-url
+  [db [url response]]
+  (assoc-in db [:recipe.db/imports url :import/data] response))
+
+(reg-event-db :success-import-url success-import-url)
+

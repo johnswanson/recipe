@@ -109,13 +109,23 @@
           [title-editor title :on-save #(dispatch [:update-editing-recipe :recipe/title %])]
           [description-editor {:value description :on-save #(dispatch [:update-editing-recipe :recipe/description %])}]]]))))
 
+(defn recipe-importer
+  []
+  (let [v (reagent/atom "")]
+    (fn []
+      [:div
+       [:input {:value @v
+                :on-change #(reset! v (.. % -target -value))}]
+       [:button {:on-click #(dispatch [:start-import-recipe @v])}
+        "Import"]])))
+
 (defn logged-in-app
   [user]
   (let [recipes (subscribe [:app/recipes])]
     (fn logged-in-app [user]
       [:div
        [:div "Hello, " (:user/username user)]
-       [recipe-editor]
+       [recipe-importer]
        [recipe-list @recipes]
        [:div [logout-button]]])))
 

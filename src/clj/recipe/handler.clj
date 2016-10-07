@@ -60,22 +60,20 @@
 
 (def site (-> site-defaults (assoc-in [:static :resources] "/public")))
 
-(defmulti read (fn [x & args] x))
-(defmethod read [:github/auth-url] [_ & [{:keys [github]}]] (recipe.github/auth-url github))
-(defmethod read [:app/logged-in-user] [_ & [{:keys [ring-req db]}]]
+(defmulti handle-event #(:id %))
+
+(defmethod handle-event :default [{:keys [event]}]
+  {:error {:unhandled-event event}})
+
+(defmethod handle-event :github/auth-url [{:keys [github]}]
+  {:result (recipe.github/auth-url github)})
+
+(defmethod handle-event :app/logged-in-user [{:keys [ring-req db]}]
   (let [uid (get-in ring-req [:session :uid])]
-    (recipe.datomic/get-user (:conn db) uid)))
+    {:result (recipe.datomic/get-user (:conn db) uid)}))
 
-(defmulti handle-event #(first (:event %)))
-
-(defmethod handle-event :default [{:keys [?reply-fn event]}]
-  (when ?reply-fn (?reply-fn {:unhandled-event event})))
-
-(defmethod handle-event :app/query [ev-msg]
-  (let [{:keys [event id ?data ring-req ?reply-fn send-fn db]} ev-msg
-        [_ query] event]
-    (when (and ?reply-fn query)
-      (?reply-fn (read query ev-msg)))))
+(defmethod handle-event :import/start [{:keys [?data]}]
+  {:result (recipe.extract/parse ?data)})
 
 (defn wrap-db
   "Sorta-middleware for the ev-msg, just adds the `db` to the ev-msg."
@@ -88,8 +86,15 @@
   (fn [ev-msg]
     (handler (assoc ev-msg :github github))))
 
+(defn wrap-reply
+  [handler]
+  (fn [{:keys [?reply-fn] :as ev-msg}]
+    (when ?reply-fn
+      (?reply-fn (handler ev-msg)))))
+
 (defn sente-handler [{:keys [db github]}]
   (-> handle-event
+      (wrap-reply)
       (wrap-db db)
       (wrap-github github)))
 
