@@ -2,7 +2,10 @@
   (:require [org.httpkit.client :as http]
             [net.cgrand.enlive-html :as html]
             [clojure.string :as str]
-            [datomic-schema.schema :as s]))
+            [datomic-schema.schema :as s]
+            [taoensso.timbre :as log]))
+
+(def remove-el (constantly nil))
 
 (defn host [url] (.getHost url))
 
@@ -23,9 +26,11 @@
 (defrecord SmittenKitchenExtractable [html]
   IExtractable
   (images [this]
-    (map
+    (filter
+     #(not (str/ends-with? % ".gif"))
+     (map
      #(first (html/attr-values % :src))
-     (html/select html [:img])))
+     (html/select html [:img]))))
   (ingredients [this]
     (map clean-str
          (-> html
@@ -46,6 +51,7 @@
   (notes [this]
     (-> html
         (html/select [:div.jetpack-recipe-notes])
+        (html/transform [:script] remove-el)
         (html/texts)
         (str/join)
         (clean-str))))
@@ -65,6 +71,7 @@
         (html/select [:h1.recipe-title])
         (html/texts)
         (first)
+        (str/lower-case)
         (clean-str)))
   (procedure [this]
     (-> html
@@ -93,7 +100,7 @@
 (def blacklist #{:script html/comment-node})
 (def whitelist
   #{:a :b :blockquote :body :code :del :dd :dl :dt
-    :em :h1 :h2 :h3 :i :img :kbd :li :ol :p :pre
+    :em :h1 :h2 :h3 :i :kbd :li :ol :p :pre
     :s :sup :sub :strong :strike :ul :br :hr :div})
 
 (def not-in-whitelist (html/but whitelist))
@@ -109,8 +116,8 @@
   (render
    (-> html
        (html/select [:html :body])
-       (html/transform [blacklist] (constantly nil))
-       (html/transform [not-in-whitelist] html/text)
+       (html/transform [blacklist] remove-el)
+       (html/transform [not-in-whitelist] :content)
        (html/transform [] #(update-in % [:attrs] clean-attrs)))))
 
 (defn ->extractable [url]
@@ -120,9 +127,11 @@
 
 (defn parse [url]
   (when-let [extractable (->extractable url)]
-    {:import/ingredients (ingredients extractable)
-     :import/notes (notes extractable)
-     :import/procedure (procedure extractable)
-     :import/title (title extractable)
+    {:import/url url
+     :import/status :import/editing
+     :import/recipe {:recipe/ingredients (or (ingredients extractable) "")
+                     :recipe/notes (or (notes extractable) "")
+                     :recipe/procedure (or (procedure extractable) "")
+                     :recipe/title (or (title extractable) "")}
      :import/possible-images (images extractable)
      :import/body (body extractable)}))

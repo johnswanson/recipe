@@ -1,6 +1,8 @@
 (ns recipe.views
   (:require [reagent.core :as reagent]
-            [re-frame.core :refer [subscribe dispatch]]))
+            [re-frame.core :refer [subscribe dispatch]]
+            [taoensso.timbre :as log]
+            [markdown.core :refer [md->html]]))
 
 (defn login-button
   []
@@ -119,6 +121,61 @@
        [:button {:on-click #(dispatch [:start-import-recipe @v])}
         "Import"]])))
 
+(defn import-manager [{:keys [import/recipe
+                              import/status
+                              import/url
+                              import/body
+                              import/possible-images
+                              import/error]}]
+  (let [{:keys [recipe/ingredients
+                recipe/notes
+                recipe/procedure
+                recipe/title]} recipe]
+    [:div.import-manager {:style {:display :flex
+                                  :margin "5%"}}
+     [:div
+      {:style {:flex "50%"}}
+      [:div
+       [:button {:on-click #(dispatch [:save-import url recipe])}
+        "Save"]
+       [:button {:on-click #(dispatch [:cancel-import url])}
+        "Cancel"]]
+      [:div [:h3 "Images"]
+       (for [img possible-images]
+         ^{:key img} [:img {:width "50px"
+                            :height "50px"
+                            :on-click #(dispatch [:import/select-image url img])
+                            :src img}])]
+      [:div [:h3 "Title"] title]
+      [:div [:h3 "Notes"] notes]
+      [:div [:h3 "Ingredients"]
+       [:ul (for [i ingredients]
+              ^{:key i} [:li i])]]
+      [:div [:h3 "Procedure"]
+       [:div {:dangerouslySetInnerHTML
+              {:__html (md->html procedure)}}]]]
+     [:div
+      {:style {:flex "50%"
+               :font-size "6px"}
+       :on-click #(do (.persist %)
+                      (js/console.log "clicked!")
+                      (js/console.log %))}
+      [:div
+       {:style {:overflow-y "scroll"}
+        :dangerouslySetInnerHTML {:__html body}}]]]))
+
+(defn recipe-import-list
+  []
+  (let [imports (subscribe [:app/imports])]
+    (fn []
+      [:div {:style {:display :flex
+                     :justify-content :space-around}}
+       [:div {:style {:width "80%"
+                      :border "2px solid black"}}
+        (for [import @imports]
+          ^{:key (:import/url import)}
+          [import-manager import])]])))
+
 (defn logged-in-app
   [user]
   (let [recipes (subscribe [:app/recipes])]
@@ -126,6 +183,7 @@
       [:div
        [:div "Hello, " (:user/username user)]
        [recipe-importer]
+       [recipe-import-list]
        [recipe-list @recipes]
        [:div [logout-button]]])))
 

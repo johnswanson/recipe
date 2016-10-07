@@ -6,7 +6,9 @@
             [clojure.core.match :as match :refer [match]]
             [recipe.datomic]
             [recipe.github]
-            [hiccup.page :refer [html5]]))
+            [hiccup.page :refer [html5]]
+            [recipe.extract]
+            [taoensso.timbre :as log]))
 
 (def logout
   {:status 307
@@ -74,6 +76,7 @@
 
 (defmethod handle-event :import/start [{:keys [?data]}]
   {:result (recipe.extract/parse ?data)})
+
 
 (defn wrap-db
   "Sorta-middleware for the ev-msg, just adds the `db` to the ev-msg."

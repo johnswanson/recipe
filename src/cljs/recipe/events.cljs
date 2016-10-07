@@ -128,7 +128,9 @@
 
 (defn start-import-recipe
   [{:keys [db]} [url]]
-  {:db (assoc-in db [:imports url :status] :pending)
+  {:db (-> db
+           (assoc-in [:recipe.db/imports url :import/url] url)
+           (assoc-in [:recipe.db/imports url :import/status] :import/pending))
    :ws-query [{:query [:import/start url]
                :on-success [:success-import-url url]
                :on-failure [:fail-import-url url]
@@ -138,13 +140,28 @@
 
 (defn fail-import-url
   [db [url error]]
-  (assoc-in db [:recipe.db/imports url :import/error] error))
+  (assoc-in db [:recipe.db/imports url :import/status] error))
 
 (reg-event-db :fail-import-url fail-import-url)
 
 (defn success-import-url
   [db [url response]]
-  (assoc-in db [:recipe.db/imports url :import/data] response))
+  (assoc-in db [:recipe.db/imports url] response))
 
 (reg-event-db :success-import-url success-import-url)
 
+(defn save-import
+  [{:keys [db]} [url recipe]]
+  {:db (assoc-in db [:recipe.db/imports url :import/status] :import/saving)
+   :ws-query [{:query [:import/save]
+               :on-success [:success-save-import url]
+               :on-failure [:fail-save-import url]
+               :timeout 2000}]})
+
+(reg-event-fx :save-import save-import)
+
+(defn cancel-import
+  [db [url]]
+  (update-in db [:recipe.db/imports] dissoc url))
+
+(reg-event-db :cancel-import cancel-import)

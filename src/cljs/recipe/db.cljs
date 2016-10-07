@@ -6,7 +6,6 @@
 
 (s/def :recipe/id integer?)
 (s/def :recipe/ingredient string?)
-(s/def :recipe/description string?)
 (s/def :recipe/thumbnail-url string?)
 (s/def :recipe/title string?)
 (s/def :recipe/ingredients (s/coll-of :recipe/ingredient))
@@ -15,26 +14,24 @@
 (s/def ::recipe
   (s/keys :req [:recipe/title
                 :recipe/ingredients
-                :recipe/procedure
-                :recipe/description]
+                :recipe/procedure]
           :opt [:recipe/id
                 :recipe/thumbnail-url]))
 
-(s/def :import/data
-  (s/keys :req [(s/nilable :import/title)
-                (s/nilable :import/ingredients)
-                (s/nilable :import/procedure)
-                (s/nilable :import/description)
-                (s/nilable :import/possible-images)
-                (s/nilable :import/body)]))
-
-(s/def :import/error #{})
-
+(s/def :import/recipe ::recipe)
+(s/def :import/body string?)
+(s/def :import/possible-images (s/coll-of :recipe/thumbnail-url))
+(s/def :import/status keyword?)
 (s/def :import/url string?)
 
 (s/def ::import
-  (s/keys :opt [:import/error
-                :import/data]))
+  (s/keys :req [:import/status
+                :import/url]
+          :opt [:import/recipe
+                :import/body
+                :import/possible-images
+                :import/error]))
+
 (s/def ::imports (s/map-of :import/url ::import))
 
 (s/def ::editing-recipe ::recipe)

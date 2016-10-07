@@ -8,8 +8,12 @@
   (:import [goog History]
            [goog.history EventType]))
 
+(defonce booted? (atom nil))
+
 (defn ^:export main
   []
-  (dispatch-sync [:boot])
+  (when-not @booted?
+    (dispatch-sync [:boot])
+    (reset! booted? true))
   (reagent/render [recipe.views/app]
                   (.getElementById js/document "app")))
