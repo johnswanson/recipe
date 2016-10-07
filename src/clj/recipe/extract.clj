@@ -27,13 +27,28 @@
      #(first (html/attr-values % :src))
      (html/select html [:img])))
   (ingredients [this]
-    (map #(-> % html/text clean-str) (html/select html [:li.jetpack-recipe-ingredient])))
+    (map clean-str
+         (-> html
+             (html/select [:li.jetpack-recipe-ingredient])
+             (html/texts))))
   (title [this]
-    (clean-str (html/text (first (html/select html [:h1.entry-title])))))
+    (-> html
+        (html/select [:h1.entry-title])
+        (html/texts)
+        (first)
+        (clean-str)))
   (procedure [this]
-    (clean-str (str/join (map html/text (html/select html [:div.jetpack-recipe-directions])))))
+    (-> html
+        (html/select [:div.jetpack-recipe-directions])
+        (html/texts)
+        (str/join)
+        (clean-str)))
   (notes [this]
-    (clean-str (str/join (map html/text (html/select html [:div.jetpack-recipe-notes]))))))
+    (-> html
+        (html/select [:div.jetpack-recipe-notes])
+        (html/texts)
+        (str/join)
+        (clean-str))))
 
 (defrecord SeriousEatsExtractable [html]
   IExtractable
@@ -41,19 +56,28 @@
     (map #(first (html/attr-values % :src))
          (html/select html [:img])))
   (ingredients [this]
-    (map #(-> % html/text clean-str) (html/select html [:li.ingredient])))
+    (map clean-str
+         (-> html
+             (html/select [:li.ingredient])
+             (html/texts))))
   (title [this]
     (-> html
         (html/select [:h1.recipe-title])
+        (html/texts)
         (first)
-        (html/text)
         (clean-str)))
   (procedure [this]
-    (clean-str (str/join (map html/text (html/select html [:div.recipe-procedure-text])))))
+    (-> html
+        (html/select [:div.recipe-procedure-text])
+        (html/texts)
+        (str/join)
+        (clean-str)))
   (notes [this]
-    (clean-str
-     (str/join
-      (map html/text (html/select html [:div.recipe-introduction-body]))))))
+    (-> html
+        (html/select [:div.recipe-introduction-body])
+        (html/texts)
+        (str/join)
+        (clean-str))))
 
 (def serious-eats? (partial re-find #"seriouseats\.com"))
 (def smitten-kitchen?  (partial re-find #"smittenkitchen\.com"))
