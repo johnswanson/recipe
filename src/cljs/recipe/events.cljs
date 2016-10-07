@@ -13,9 +13,9 @@
   ([id interceptors handler-fn]
    (re-frame.core/reg-event-db
     id
-    [trim-v
-     (when ^boolean goog.DEBUG debug)
+    [(when ^boolean goog.DEBUG debug)
      (when ^boolean goog.DEBUG (after valid-schema?))
+     trim-v
      interceptors]
     handler-fn)))
 
@@ -25,9 +25,9 @@
   ([id interceptors handler-fn]
    (re-frame.core/reg-event-fx
     id
-    [trim-v
-     (when ^boolean goog.DEBUG debug)
+    [(when ^boolean goog.DEBUG debug)
      (when ^boolean goog.DEBUG (after valid-db-schema?))
+     trim-v
      interceptors]
     handler-fn)))
 
