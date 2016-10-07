@@ -21,10 +21,12 @@
                 :recipe/thumbnail-url]))
 
 (s/def :import/data
-  (s/keys :req [(s/nilable :recipe/title)
-                (s/nilable :recipe/ingredients)
-                (s/nilable :recipe/procedure)
-                (s/nilable :recipe/description)]))
+  (s/keys :req [(s/nilable :import/title)
+                (s/nilable :import/ingredients)
+                (s/nilable :import/procedure)
+                (s/nilable :import/description)
+                (s/nilable :import/possible-images)
+                (s/nilable :import/body)]))
 
 (s/def :import/error #{})
 
