@@ -132,9 +132,11 @@
                 recipe/procedure
                 recipe/title]} recipe]
     [:div.import-manager {:style {:display :flex
-                                  :margin "5%"}}
+                                  :margin "5%"
+                                  :height "500px"}}
      [:div
-      {:style {:flex "50%"}}
+      {:style {:flex "50%"
+               :overflow-y :scroll}}
       [:div
        [:button {:on-click #(dispatch [:save-import url recipe])}
         "Save"]
@@ -156,7 +158,8 @@
               {:__html (md->html procedure)}}]]]
      [:div
       {:style {:flex "50%"
-               :font-size "6px"}
+               :font-size "8px"
+               :overflow-y :scroll}
        :on-click #(do (.persist %)
                       (js/console.log "clicked!")
                       (js/console.log %))}
