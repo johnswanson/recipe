@@ -4,6 +4,31 @@
             [taoensso.timbre :as log]
             [markdown.core :refer [md->html]]))
 
+(defn input'
+  [& {:keys [save change stop value]}]
+  [:input {:value value
+           :on-key-down #(condp = (.-which %)
+                           13 (do (save) (stop))
+                           27 (stop)
+                           nil)
+           :on-change change
+           :on-blur stop}])
+
+(def input (with-meta input' {:component-did-mount #(.focus (reagent/dom-node %))}))
+
+(defn textarea'
+  [& {:keys [save change stop value]}]
+  [:textarea {:value value
+              :on-key-down #(cond
+                              (and (= (.-which %) 13)
+                                   (.-shiftKey %)) (do (save) (stop))
+                              (= (.-which %) 27) (stop)
+                              :else nil)
+              :on-change change
+              :on-blur stop}])
+
+(def textarea (with-meta textarea' {:component-did-mount #(.focus (reagent/dom-node %))}))
+
 (defn login-button
   []
   (let [auth-url (subscribe [:github/auth-url])]
@@ -121,51 +146,91 @@
        [:button {:on-click #(dispatch [:start-import-recipe @v])}
         "Import"]])))
 
-(defn import-manager [{:keys [import/recipe
-                              import/status
-                              import/url
-                              import/body
-                              import/possible-images
-                              import/error]}]
-  (let [{:keys [recipe/ingredients
+(defn save-button [url] [:button {:on-click #(dispatch [:save-import url])} "Save"])
+(defn cancel-button [url] [:button {:on-click #(dispatch [:cancel-import url])} "Cancel"])
+
+(defn title-view [url title]
+  (let [state (reagent/atom {:value title})
+        save #(dispatch [:import/update url :recipe/title (:value @state)])
+        stop #(swap! state assoc :editing? false)
+        save-local #(swap! state assoc :value (.. % -target -value))]
+    (fn [url title]
+      (let [{:keys [editing? value]} @state]
+        (if-not editing?
+          [:div
+           {:on-click #(swap! state assoc :editing? true)}
+           [:h2 "Title"]
+           title]
+          [:div
+           [:h2 "Title"]
+           [input
+            :value value
+            :save save
+            :stop stop
+            :change save-local]])))))
+
+(defn image-selector [url possible-images]
+  [:div [:h3 "Images"] ;; image-selector
+   (for [img possible-images]
+     ^{:key img} [:img {:width "100px"
+                        :height "100px"
+                        :on-click #(dispatch [:import/select-image url img])
+                        :src img}])])
+
+(defn note-editor
+  [url notes]
+  (let [state (reagent/atom {:value notes :editing? false})
+        save #(dispatch [:import/update url :recipe/notes (:value @state)])
+        stop #(swap! state assoc :editing? false)
+        save-local #(swap! state assoc :value (.. % -target -value))]
+    (fn [url notes]
+      (let [{:keys [editing? value]} @state]
+        (if editing?
+          [:div
+           [:h3 "Notes"]
+           [textarea
+            :value value
+            :change save-local
+            :stop stop
+            :save save]]
+          [:div {:on-click #(swap! state assoc :editing? true)}
+           [:h3 "Notes"] notes])))))
+
+(defn ingredient-editor
+  [url ingredients]
+  [:div [:h3 "Ingredients"]
+   [:ul (for [i ingredients]
+          ^{:key i} [:li i])]])
+
+(defn procedure-editor
+ [url procedure]
+ [:div [:h3 "Procedure"]
+ [:div {:dangerouslySetInnerHTML
+        {:__html (md->html procedure)}}]])
+
+(defn import-editor [{:keys [import/recipe
+                             import/url
+                             import/possible-images]}]
+  (let [{:keys [recipe/title
                 recipe/notes
-                recipe/procedure
-                recipe/title]} recipe]
-    [:div.import-manager {:style {:display :flex
-                                  :margin "5%"
-                                  :height "500px"}}
+                recipe/ingredients
+                recipe/procedure]} recipe]
+    [:div
      [:div
-      {:style {:flex "50%"
-               :overflow-y :scroll}}
-      [:div
-       [:button {:on-click #(dispatch [:save-import url recipe])}
-        "Save"]
-       [:button {:on-click #(dispatch [:cancel-import url])}
-        "Cancel"]]
-      [:div [:h3 "Images"]
-       (for [img possible-images]
-         ^{:key img} [:img {:width "50px"
-                            :height "50px"
-                            :on-click #(dispatch [:import/select-image url img])
-                            :src img}])]
-      [:div [:h3 "Title"] title]
-      [:div [:h3 "Notes"] notes]
-      [:div [:h3 "Ingredients"]
-       [:ul (for [i ingredients]
-              ^{:key i} [:li i])]]
-      [:div [:h3 "Procedure"]
-       [:div {:dangerouslySetInnerHTML
-              {:__html (md->html procedure)}}]]]
-     [:div
-      {:style {:flex "50%"
-               :font-size "8px"
-               :overflow-y :scroll}
-       :on-click #(do (.persist %)
-                      (js/console.log "clicked!")
-                      (js/console.log %))}
-      [:div
-       {:style {:overflow-y "scroll"}
-        :dangerouslySetInnerHTML {:__html body}}]]]))
+      [save-button url]
+      [cancel-button url]]
+     [image-selector url possible-images]
+     [title-view url title]
+     [note-editor url notes]
+     [procedure-editor url procedure]]))
+
+(defn import-manager [{:keys [import/recipe import/body] :as import}]
+  [:div.import-manager {:style {:display :flex
+                                :margin "5%"
+                                :height "500px"}}
+   [:div ;; import-editor
+    {:style {:overflow-y :scroll}}
+    [import-editor import]]])
 
 (defn recipe-import-list
   []

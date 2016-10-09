@@ -165,3 +165,9 @@
   (update-in db [:recipe.db/imports] dissoc url))
 
 (reg-event-db :cancel-import cancel-import)
+
+(defn update-import
+  [db [url key value]]
+  (assoc-in db [:recipe.db/imports url :import/recipe key] value))
+
+(reg-event-db :import/update update-import)
