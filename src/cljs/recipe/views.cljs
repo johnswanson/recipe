@@ -2,34 +2,8 @@
   (:require [reagent.core :as reagent]
             [re-frame.core :refer [subscribe dispatch]]
             [taoensso.timbre :as log]
-            [markdown.core :refer [md->html]]))
-
-(defn input'
-  [{:keys [save change stop value]}]
-  [:input {:value value
-           :on-key-down #(condp = (.-which %)
-                           13 (do (save) (stop))
-                           27 (stop)
-                           nil)
-           :on-change change
-           :on-blur stop}])
-
-(def input (with-meta input' {:component-did-mount #(.focus (reagent/dom-node %))}))
-
-(defn textarea'
-  [{:keys [save change stop value]}]
-  [:textarea {:value value
-              :style {:width "100%"
-                      :height "500px"}
-              :on-key-down #(cond
-                              (and (= (.-which %) 13)
-                                   (.-shiftKey %)) (do (save) (stop))
-                              (= (.-which %) 27) (stop)
-                              :else nil)
-              :on-change change
-              :on-blur stop}])
-
-(def textarea (with-meta textarea' {:component-did-mount #(.focus (reagent/dom-node %))}))
+            [markdown.core :refer [md->html]]
+            [recipe.views.editors :as editors]))
 
 (defn login-button
   []
@@ -58,51 +32,21 @@
 (defn cancel-button [url] [:button {:on-click #(dispatch [:cancel-import url])} "Cancel"])
 
 (defn image-selector [url possible-images]
-  [:div [:h3 "Images"] ;; image-selector
-   (for [img possible-images]
-     ^{:key img} [:img {:width "100px"
-                        :height "100px"
-                        :on-click #(dispatch [:import/select-image url img])
-                        :src img}])])
+  [:div])
 
-(defn markdown [value]
-  [:div {:dangerouslySetInnerHTML
-         {:__html (md->html value)}}])
-
-(defn editor
-  [{:keys [url value editor title markdown?]}]
-  (console.log url title editor)
-  (let [state (reagent/atom {:value value :editing? false})
-        save #(dispatch [:import/update url key (:value @state)])
-        stop #(swap! state assoc :editing? false)
-        save-local #(swap! state assoc :value (.. % -target -value))]
-    (fn [{:keys [url value editor title markdown?]}]
-      (console.log url title editor)
-      (let [{:keys [editing? value]} @state]
-        [:div
-         [:h3 title]
-         (if editing?
-           [editor {:value value
-                    :change save-local
-                    :stop stop
-                    :save save}]
-           [:div {:on-click #(swap! state assoc :editing? true)}
-            (if markdown?
-              [markdown value]
-              value)])]))))
 
 (defn title-view
   [url title]
-  [editor {:url url
+  [editors/editor {:url url
            :value title
-           :editor input
+           :editor editors/input
            :title "Title"}])
 
 (defn note-editor
   [url notes]
-  [editor {:url url
+  [editors/editor {:url url
            :value notes
-           :editor textarea
+           :editor editors/textarea
            :title "Notes"}])
 
 (defn ingredient-editor
@@ -113,9 +57,9 @@
 
 (defn procedure-editor
   [url procedure]
-  [editor {:url url
+  [editors/editor {:url url
            :value procedure
-           :editor textarea
+           :editor editors/textarea
            :title "Procedure"
            :markdown? true}])
 
@@ -135,13 +79,8 @@
      [note-editor url notes]
      [procedure-editor url procedure]]))
 
-(defn import-manager [{:keys [import/recipe import/body] :as import}]
-  [:div.import-manager {:style {:display :flex
-                                :margin "5%"
-                                :height "500px"}}
-   [:div ;; import-editor
-    {:style {:overflow-y :scroll}}
-    [import-editor import]]])
+(defn import-manager [import]
+  [import-editor import])
 
 (defn recipe-import-list
   []
@@ -173,6 +112,8 @@
 
 (defn app
   []
-  (let [user (subscribe [:app/logged-in-user])]
-    (fn [] [app-view @user])))
+  (let [user (subscribe [:app/logged-in-user])
+        imports (subscribe [:app/imports])]
+    (fn [] [:div [app-view @user]
+            [:pre (with-out-str (cljs.pprint/pprint @imports))]])))
 
