@@ -10,13 +10,15 @@
 (s/def :recipe/title string?)
 (s/def :recipe/ingredients (s/coll-of :recipe/ingredient))
 (s/def :recipe/procedure string?)
+(s/def :recipe/source-url string?)
 
 (s/def ::recipe
   (s/keys :req [:recipe/title
                 :recipe/ingredients
                 :recipe/procedure]
           :opt [:recipe/id
-                :recipe/thumbnail-url]))
+                :recipe/thumbnail-url
+                :recipe/source-url]))
 
 (s/def :import/recipe ::recipe)
 (s/def :import/body string?)
