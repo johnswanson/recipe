@@ -37,20 +37,21 @@
 
 (defn editor
   [{:keys [url value editor title markdown?]}]
-  (let [state (reagent/atom {:value value :editing? false})
-        save #(dispatch [:import/update url key (:value @state)])
-        stop #(swap! state assoc :editing? false)
-        save-local #(swap! state assoc :value (.. % -target -value))]
-    (fn [{:keys [url value editor title markdown?]}]
-      (let [{:keys [editing? value]} @state]
-        [:div
-         [:h3 title]
-         (if editing?
-           [editor {:value value
-                    :change save-local
-                    :stop stop
-                    :save save}]
-           [:div {:on-click #(swap! state assoc :editing? true)}
-            (if markdown?
-              [markdown value]
-              value)])]))))
+  (when value
+    (let [state (reagent/atom {:value value :editing? false})
+          save #(dispatch [:import/update url key (:value @state)])
+          stop #(swap! state assoc :editing? false)
+          save-local #(swap! state assoc :value (.. % -target -value))]
+      (fn [{:keys [url editor title markdown?]}]
+        (let [{:keys [editing? value]} @state]
+          [:div
+           [:h3 title]
+           (if editing?
+             [editor {:value value
+                      :change save-local
+                      :stop stop
+                      :save save}]
+             [:div {:on-click #(swap! state assoc :editing? true)}
+              (if markdown?
+                [markdown value]
+                value)])])))))
