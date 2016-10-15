@@ -38,16 +38,17 @@
 (defn title-view
   [url title]
   [editors/editor {:url url
-           :value title
-           :editor editors/input
-           :title "Title"}])
+                   :value title
+                   :editor editors/input
+                   :title "Title"}])
 
 (defn note-editor
   [url notes]
   [editors/editor {:url url
-           :value notes
-           :editor editors/textarea
-           :title "Notes"}])
+                   :value notes
+                   :editor editors/textarea
+                   :title "Notes"
+                   :markdown? true}])
 
 (defn ingredient-editor
   [url ingredients]
@@ -58,10 +59,10 @@
 (defn procedure-editor
   [url procedure]
   [editors/editor {:url url
-           :value procedure
-           :editor editors/textarea
-           :title "Procedure"
-           :markdown? true}])
+                   :value procedure
+                   :editor editors/textarea
+                   :title "Procedure"
+                   :markdown? true}])
 
 (defn import-editor [{:keys [import/recipe
                              import/url

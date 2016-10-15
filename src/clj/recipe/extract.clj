@@ -11,9 +11,10 @@
 
 (defn clean-str [s]
   (-> s
-      (str/trim)
-      (str/replace (-> 160 char str) " ")
-      (str/replace #"\s+" " ")))
+      (str/split #"\n")
+      (#(map str/trim %))
+      (#(str/join "\n\n" %))
+      (str/replace (-> 160 char str) " ")))
 
 (defprotocol IExtractable
   "Something we can extract recipe data from"
@@ -77,14 +78,14 @@
     (-> html
         (html/select [:div.recipe-procedure-text])
         (html/texts)
-        (str/join)
-        (clean-str)))
+        (#(map str/trim %))
+        (#(str/join "\n\n" %))))
   (notes [this]
     (-> html
-        (html/select [:div.recipe-introduction-body])
+        (html/select [:div.recipe-introduction-body :> #{:p :ul}])
         (html/texts)
-        (str/join)
-        (clean-str))))
+        (#(map str/trim %))
+        (#(str/join "\n\n" %)))))
 
 (def serious-eats? (partial re-find #"seriouseats\.com"))
 (def smitten-kitchen?  (partial re-find #"smittenkitchen\.com"))
