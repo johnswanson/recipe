@@ -35,7 +35,7 @@
   [:div])
 
 
-(defn title-view
+(defn title-editor
   [url title]
   [editors/editor {:url url
                    :value title
@@ -76,7 +76,7 @@
       [save-button url]
       [cancel-button url]]
      [image-selector url possible-images]
-     [title-view url title]
+     [title-editor url title]
      [note-editor url notes]
      [procedure-editor url procedure]]))
 
