@@ -38,6 +38,7 @@
 (defn title-editor
   [url title]
   [editors/editor {:url url
+                   :key :recipe/title
                    :value title
                    :editor editors/input
                    :title "Title"}])
@@ -45,6 +46,7 @@
 (defn note-editor
   [url notes]
   [editors/editor {:url url
+                   :key :recipe/notes
                    :value notes
                    :editor editors/textarea
                    :title "Notes"
@@ -59,6 +61,7 @@
 (defn procedure-editor
   [url procedure]
   [editors/editor {:url url
+                   :key :recipe/procedure
                    :value procedure
                    :editor editors/textarea
                    :title "Procedure"

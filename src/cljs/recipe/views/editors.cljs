@@ -36,7 +36,7 @@
          {:__html (md->html value)}}])
 
 (defn editor
-  [{:keys [url value editor title markdown?]}]
+  [{:keys [url value editor title markdown? key]}]
   (when value
     (let [state (reagent/atom {:value value :editing? false})
           save #(dispatch [:import/update url key (:value @state)])
