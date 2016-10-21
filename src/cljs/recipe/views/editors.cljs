@@ -23,7 +23,10 @@
                       :height "500px"}
               :on-key-down #(cond
                               (and (= (.-which %) 13)
-                                   (.-shiftKey %)) (do (save) (stop))
+                                   (.-shiftKey %)) (do
+                                                     (.preventDefault %)
+                                                     (save)
+                                                     (stop))
                               (= (.-which %) 27) (stop)
                               :else nil)
               :on-change change
