@@ -5,7 +5,8 @@
             [day8.re-frame.http-fx]
             [re-frame.core :refer [inject-cofx path trim-v after debug console]]
             [re-frame.db :as db]
-            [clojure.spec :as s]))
+            [clojure.spec :as s]
+            [clojure.string :as str]))
 
 (defn reg-event-db
   ([id handler-fn]
@@ -171,3 +172,11 @@
   (assoc-in db [:recipe.db/imports url :import/recipe key] value))
 
 (reg-event-db :import/update update-import)
+
+(defn update-ingredients
+  [db [url value]]
+  (assoc-in db
+            [:recipe.db/imports url :import/recipe :recipe/ingredients]
+            (str/split value "\n\n")))
+
+(reg-event-db :import/update-ingredients update-ingredients)

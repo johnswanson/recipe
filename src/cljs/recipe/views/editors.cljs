@@ -5,32 +5,40 @@
             [re-frame.core :as re-frame]))
 
 (defn- input'
-  [{:keys [save change stop value]}]
-  [:input {:value value
-           :on-key-down #(condp = (.-which %)
-                           13 (do (save) (stop))
-                           27 (stop)
-                           nil)
-           :on-change change
-           :on-blur stop}])
+  [{:keys [save stop value]}]
+  (let [state (reagent/atom value)
+        change #(reset! state (.. % -target -value))
+        save #(save @state)]
+    (fn [& args]
+      [:input {:value @state
+               :on-key-down #(condp = (.-which %)
+                               13 (do (save) (stop))
+                               27 (stop)
+                               nil)
+               :on-change change
+               :on-blur stop}])))
 
 (def input (with-meta input' {:component-did-mount #(.focus (reagent/dom-node %))}))
 
 (defn textarea'
-  [{:keys [save change stop value]}]
-  [:textarea {:value value
-              :style {:width "100%"
-                      :height "500px"}
-              :on-key-down #(cond
-                              (and (= (.-which %) 13)
-                                   (.-shiftKey %)) (do
-                                                     (.preventDefault %)
-                                                     (save)
-                                                     (stop))
-                              (= (.-which %) 27) (stop)
-                              :else nil)
-              :on-change change
-              :on-blur stop}])
+  [{:keys [save stop value]}]
+  (let [state (reagent/atom value)
+        change #(reset! state (.. % -target -value))
+        save #(save @state)]
+    (fn [& args]
+      [:textarea {:value @state
+                  :style {:width "100%"
+                          :height "500px"}
+                  :on-key-down #(cond
+                                  (and (= (.-which %) 13)
+                                       (.-shiftKey %)) (do
+                                                         (.preventDefault %)
+                                                         (save)
+                                                         (stop))
+                                  (= (.-which %) 27) (stop)
+                                  :else nil)
+                  :on-change change
+                  :on-blur stop}])))
 
 (def textarea (with-meta textarea' {:component-did-mount #(.focus (reagent/dom-node %))}))
 
@@ -40,21 +48,17 @@
 
 (defn editor
   [{:keys [url value editor title markdown? save]}]
-  (when value
-    (let [state (reagent/atom {:value value :editing? false})
-          save #(save (:value @state))
-          stop #(swap! state assoc :editing? false)
-          save-local #(swap! state assoc :value (.. % -target -value))]
-      (fn [{:keys [url editor title markdown?]}]
-        (let [{:keys [editing? value]} @state]
-          [:div
-           [:h3 title]
-           (if editing?
-             [editor {:value value
-                      :change save-local
-                      :stop stop
-                      :save save}]
-             [:div {:on-click #(swap! state assoc :editing? true)}
-              (if markdown?
-                [markdown value]
-                value)])])))))
+  (let [state (reagent/atom {:editing? false})
+        stop #(swap! state assoc :editing? false)]
+    (fn [{:keys [url editor title markdown? value]}]
+      (let [{:keys [editing?]} @state]
+        [:div
+         [:h3 title]
+         (if editing?
+           [editor {:value value
+                    :stop stop
+                    :save save}]
+           [:div {:on-click #(swap! state assoc :editing? true)}
+            (if markdown?
+              [markdown value]
+              value)])]))))
