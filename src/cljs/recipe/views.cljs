@@ -3,7 +3,8 @@
             [re-frame.core :refer [subscribe dispatch]]
             [taoensso.timbre :as log]
             [markdown.core :refer [md->html]]
-            [recipe.views.editors :as editors]))
+            [recipe.views.editors :as editors]
+            [clojure.string :as str]))
 
 (defn login-button
   []
@@ -38,7 +39,7 @@
 (defn title-editor
   [url title]
   [editors/editor {:url url
-                   :key :recipe/title
+                   :save #(dispatch [:import/update url :recipe/title %])
                    :value title
                    :editor editors/input
                    :title "Title"}])
@@ -46,7 +47,7 @@
 (defn note-editor
   [url notes]
   [editors/editor {:url url
-                   :key :recipe/notes
+                   :save #(dispatch [:import/update url :recipe/notes %])
                    :value notes
                    :editor editors/textarea
                    :title "Notes"
@@ -55,14 +56,18 @@
 (defn ingredient-editor
   [url ingredients]
   [:div [:h3 "Ingredients"]
-   [:ul (for [i ingredients]
-          ^{:key i} [:li i])]])
+   [editors/editor {:url url
+                    :save #(dispatch [:import/update-ingredients url %])
+                    :value (when ingredients
+                             (str/join "\n\n" ingredients))
+                    :editor editors/textarea
+                    :markdown? true}]])
 
 (defn procedure-editor
   [url procedure]
   [editors/editor {:url url
-                   :key :recipe/procedure
                    :value procedure
+                   :save #(dispatch [:import/update url :recipe/procedure %])
                    :editor editors/textarea
                    :title "Procedure"
                    :markdown? true}])
@@ -80,6 +85,7 @@
       [cancel-button url]]
      [image-selector url possible-images]
      [title-editor url title]
+     [ingredient-editor url ingredients]
      [note-editor url notes]
      [procedure-editor url procedure]]))
 
