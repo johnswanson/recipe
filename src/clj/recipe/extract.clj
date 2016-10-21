@@ -113,14 +113,6 @@
 
 (defn render [node] (apply str (html/emit* node)))
 
-(defn body [{:keys [html]}]
-  (render
-   (-> html
-       (html/select [:html :body])
-       (html/transform [blacklist] remove-el)
-       (html/transform [not-in-whitelist] :content)
-       (html/transform [] #(update-in % [:attrs] clean-attrs)))))
-
 (defn ->extractable [url]
   (condp = (site url)
     :serious-eats (->SeriousEatsExtractable (html url))
@@ -134,5 +126,4 @@
                      :recipe/notes (or (notes extractable) "")
                      :recipe/procedure (or (procedure extractable) "")
                      :recipe/title (or (title extractable) "")}
-     :import/possible-images (images extractable)
-     :import/body (body extractable)}))
+     :import/possible-images (images extractable)}))
