@@ -47,10 +47,10 @@
          {:__html (md->html value)}}])
 
 (defn editor
-  [{:keys [url value editor title markdown? save]}]
+  [{:keys [value editor title markdown? save]}]
   (let [state (reagent/atom {:editing? false})
         stop #(swap! state assoc :editing? false)]
-    (fn [{:keys [url editor title markdown? value]}]
+    (fn [{:keys [editor title markdown? value]}]
       (let [{:keys [editing?]} @state]
         [:div
          [:h3 title]

@@ -38,16 +38,14 @@
 
 (defn title-editor
   [url title]
-  [editors/editor {:url url
-                   :save #(dispatch [:import/update url :recipe/title %])
+  [editors/editor {:save #(dispatch [:import/update url :recipe/title %])
                    :value title
                    :editor editors/input
                    :title "Title"}])
 
 (defn note-editor
   [url notes]
-  [editors/editor {:url url
-                   :save #(dispatch [:import/update url :recipe/notes %])
+  [editors/editor {:save #(dispatch [:import/update url :recipe/notes %])
                    :value notes
                    :editor editors/textarea
                    :title "Notes"
@@ -56,16 +54,14 @@
 (defn ingredient-editor
   [url ingredients]
   [:div [:h3 "Ingredients"]
-   [editors/editor {:url url
-                    :save #(dispatch [:import/update-ingredients url %])
+   [editors/editor {:save #(dispatch [:import/update-ingredients url %])
                     :value (str/join "\n\n" ingredients)
                     :editor editors/textarea
                     :markdown? true}]])
 
 (defn procedure-editor
   [url procedure]
-  [editors/editor {:url url
-                   :value procedure
+  [editors/editor {:value procedure
                    :save #(dispatch [:import/update url :recipe/procedure %])
                    :editor editors/textarea
                    :title "Procedure"
