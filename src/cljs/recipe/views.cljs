@@ -58,8 +58,7 @@
   [:div [:h3 "Ingredients"]
    [editors/editor {:url url
                     :save #(dispatch [:import/update-ingredients url %])
-                    :value (when ingredients
-                             (str/join "\n\n" ingredients))
+                    :value (str/join "\n\n" ingredients)
                     :editor editors/textarea
                     :markdown? true}]])
 
