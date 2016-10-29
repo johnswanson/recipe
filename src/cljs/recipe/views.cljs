@@ -32,9 +32,17 @@
 (defn save-button [url] [:button {:on-click #(dispatch [:save-import url])} "Save"])
 (defn cancel-button [url] [:button {:on-click #(dispatch [:cancel-import url])} "Cancel"])
 
-(defn image-selector [url possible-images]
-  [:div])
-
+(defn image-selector [url current possible]
+  [:div
+   (for [img possible]
+     ^{:key img}
+     [:img {:src img
+            :style {:border (if (= current img)
+                              "5px solid yellow"
+                              "")}
+            :width "100px"
+            :height "100px"
+            :on-click #(dispatch [:import/update url :recipe/thumbnail-url img])}])])
 
 (defn title-editor
   [url title]
@@ -73,19 +81,17 @@
   (let [{:keys [recipe/title
                 recipe/notes
                 recipe/ingredients
-                recipe/procedure]} recipe]
+                recipe/procedure
+                recipe/thumbnail-url]} recipe]
     [:div
      [:div
       [save-button url]
       [cancel-button url]]
-     [image-selector url possible-images]
+     [image-selector url thumbnail-url possible-images]
      [title-editor url title]
      [ingredient-editor url ingredients]
      [note-editor url notes]
      [procedure-editor url procedure]]))
-
-(defn import-manager [import]
-  [import-editor import])
 
 (defn recipe-import-list
   []
@@ -97,7 +103,7 @@
                       :border "2px solid black"}}
         (for [import @imports]
           ^{:key (:import/url import)}
-          [import-manager import])]])))
+          [import-editor import])]])))
 
 (defn logged-in-app
   [user]
