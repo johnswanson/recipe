@@ -1,9 +1,22 @@
 (ns recipe.extract
   (:require [org.httpkit.client :as http]
+            [clojure.core.memoize :as memoize]
             [net.cgrand.enlive-html :as html]
             [clojure.string :as str]
             [datomic-schema.schema :as s]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
+            [cemerick.url :refer [url]]))
+
+(defn html' [url]
+  (html/html-resource (java.net.URL. url)))
+
+(def html (memoize/fifo html' :fifo/threshold 5))
+
+(defn abs-url [base path]
+  (try
+    (str (url path))
+    (catch java.net.MalformedURLException e
+      (-> base (url) (assoc :path path) (str)))))
 
 (def remove-el (constantly nil))
 
@@ -24,64 +37,65 @@
   (procedure [this])
   (notes [this]))
 
-(defrecord SmittenKitchenExtractable [html]
+(defrecord SmittenKitchenExtractable [url]
   IExtractable
   (images [this]
     (filter
      #(not (str/ends-with? % ".gif"))
      (map
      #(first (html/attr-values % :src))
-     (html/select html [:img]))))
+     (html/select (html url) [:img]))))
   (ingredients [this]
     (map clean-str
-         (-> html
+         (-> (html url)
              (html/select [:li.jetpack-recipe-ingredient])
              (html/texts))))
   (title [this]
-    (-> html
+    (-> (html url)
         (html/select [:h1.entry-title])
         (html/texts)
         (first)
         (clean-str)))
   (procedure [this]
-    (-> html
+    (-> (html url)
         (html/select [:div.jetpack-recipe-directions])
         (html/texts)
         (str/join)
         (clean-str)))
   (notes [this]
-    (-> html
+    (-> (html url)
         (html/select [:div.jetpack-recipe-notes])
         (html/transform [:script] remove-el)
         (html/texts)
         (str/join)
         (clean-str))))
 
-(defrecord SeriousEatsExtractable [html]
+(defrecord SeriousEatsExtractable [url]
   IExtractable
   (images [this]
-    (map #(first (html/attr-values % :src))
-         (html/select html [:img])))
+    (->> (html/select (html url) [:img])
+         (map #(first (html/attr-values % :src)))
+         (map #(abs-url url %))))
   (ingredients [this]
     (map clean-str
-         (-> html
+         (-> (html url)
              (html/select [:li.ingredient])
              (html/texts))))
   (title [this]
-    (-> html
+    (-> (html url)
         (html/select [:h1.recipe-title])
         (html/texts)
         (first)
         (str/lower-case)
         (clean-str)))
   (procedure [this]
-    (-> html
+    (-> (html url)
         (html/select [:div.recipe-procedure-text])
         (html/texts)
         (#(map str/trim %))
         (#(str/join "\n\n" %))))
   (notes [this]
-    (-> html
+    (-> (html url)
         (html/select [:div.recipe-introduction-body :> #{:p :ul}])
         (html/texts)
         (#(map str/trim %))
@@ -95,8 +109,6 @@
     (serious-eats? url) :serious-eats
     (smitten-kitchen? url) :smitten-kitchen))
 
-(defn html [url]
-  (html/html-resource (java.net.URL. url)))
 
 (def blacklist #{:script html/comment-node})
 (def whitelist
@@ -115,8 +127,8 @@
 
 (defn ->extractable [url]
   (condp = (site url)
-    :serious-eats (->SeriousEatsExtractable (html url))
-    :smitten-kitchen (->SmittenKitchenExtractable (html url))))
+    :serious-eats (->SeriousEatsExtractable url)
+    :smitten-kitchen (->SmittenKitchenExtractable url)))
 
 (defn parse [url]
   (when-let [extractable (->extractable url)]
