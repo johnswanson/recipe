@@ -64,14 +64,14 @@
 (reg-event-fx
  :do-initial-query
  (fn [_ _]
-   {:ws-query [{:query [:github/auth-url]
-                :on-success [:success-get-auth-url]
-                :on-failure [:fail-get-auth-url]
-                :timeout 2000}
-               {:query [:app/logged-in-user]
-                :on-success [:success-get-user]
-                :on-failure [:fail-get-user]
-                :timeout 2000}]}))
+   {:ws [{:query [:github/auth-url]
+          :on-success [:success-get-auth-url]
+          :on-failure [:fail-get-auth-url]
+          :timeout 2000}
+         {:query [:app/logged-in-user]
+          :on-success [:success-get-user]
+          :on-failure [:fail-get-user]
+          :timeout 2000}]}))
 
 (reg-event-db
  :success-get-auth-url
@@ -114,10 +114,10 @@
              (dissoc :recipe.db/editing-recipe)
              (assoc-in [:recipes/by-id id] recipe)
              (update-in [:recipe.db/recipes] #(into [] (conj % id))))
-     :ws-query [{:query [:save-recipe recipe]
-                 :on-success [:success-save-recipe]
-                 :on-failure [:fail-save-recipe]
-                 :timeout 2000}]}))
+     :ws [{:query [:save-recipe recipe]
+           :on-success [:success-save-recipe]
+           :on-failure [:fail-save-recipe]
+           :timeout 2000}]}))
 
 (defn success-save-recipe
   [db {:keys [db/id]}]
@@ -132,10 +132,10 @@
   {:db (-> db
            (assoc-in [:recipe.db/imports url :import/url] url)
            (assoc-in [:recipe.db/imports url :import/status] :import/pending))
-   :ws-query [{:query [:import/start url]
-               :on-success [:success-import-url url]
-               :on-failure [:fail-import-url url]
-               :timeout 8000}]})
+   :ws [{:query [:import/start url]
+         :on-success [:success-import-url url]
+         :on-failure [:fail-import-url url]
+         :timeout 8000}]})
 
 (reg-event-fx :start-import-recipe start-import-recipe)
 
@@ -154,10 +154,10 @@
 (defn save-import
   [{:keys [db]} [url recipe]]
   {:db (assoc-in db [:recipe.db/imports url :import/status] :import/saving)
-   :ws-query [{:query [:import/save]
-               :on-success [:success-save-import url]
-               :on-failure [:fail-save-import url]
-               :timeout 2000}]})
+   :ws [{:query [:import/save]
+         :on-success [:success-save-import url]
+         :on-failure [:fail-save-import url]
+         :timeout 2000}]})
 
 (reg-event-fx :save-import save-import)
 

@@ -14,11 +14,6 @@
 (defn logout-button
   [] [:a {:href "/logout"} "logout"])
 
-(defn recipe-list [ids]
-  [:div
-   (for [id ids]
-     ^{:key id} [:div id])])
-
 (defn recipe-importer
   []
   (let [v (reagent/atom "")]
@@ -113,7 +108,6 @@
        [:div "Hello, " (:user/username user)]
        [recipe-importer]
        [recipe-import-list]
-       [recipe-list @recipes]
        [:div [logout-button]]])))
 
 (defn app-view [user]
