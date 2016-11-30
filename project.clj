@@ -12,14 +12,11 @@
                                             [com.cemerick/piggieback "0.2.1"]
                                             [reloaded.repl "0.2.3"]]}]}
   :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
-  :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"
-                                   :creds :gpg}}
   :dependencies [[org.clojure/clojure "1.9.0-alpha12"]
                  [org.clojure/clojurescript "1.9.229"]
                  [org.clojure/core.async "0.2.391"]
                  [org.clojure/core.match "0.3.0-alpha4"]
                  [org.clojure/core.memoize "0.5.8"]
-                 [com.datomic/datomic-pro "0.9.5394"]
                  [com.cemerick/url "0.1.1"]
                  [im.chit/hara.io.watch "2.4.4"]
                  [org.danielsz/system "0.3.2-SNAPSHOT"]
@@ -39,7 +36,6 @@
                  [com.stuartsierra/component "0.3.1"]
                  [com.taoensso/sente "1.10.0" :exclusions [com.taoensso/encore]]
                  [com.taoensso/timbre "4.7.4"]
-                 [datomic-schema "1.3.0"]
                  [hiccup "1.0.5"]
                  [kibu/pushy "0.3.6"]
                  [markdown-clj "0.9.89"]])

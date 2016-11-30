@@ -3,7 +3,6 @@
             [clojure.core.memoize :as memoize]
             [net.cgrand.enlive-html :as html]
             [clojure.string :as str]
-            [datomic-schema.schema :as s]
             [taoensso.timbre :as log]
             [cemerick.url :refer [url]]))
 

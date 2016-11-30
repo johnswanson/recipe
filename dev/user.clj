@@ -3,7 +3,6 @@
             [clojure.repl :refer :all]
             [reloaded.repl :refer [system init start stop go reset]]
             [com.stuartsierra.component :as component]
-            [datomic.api :as d]
             [clojure.string :as str]
             [cheshire.core :as json]
             [taoensso.timbre :as log]
@@ -18,8 +17,7 @@
             [system.components
              [watcher :refer [new-watcher]]]
             [recipe.systems]
-            [recipe.config :refer [dev-config]]
-            [recipe.datomic]))
+            [recipe.config :refer [dev-config]]))
 
 (clojure.tools.namespace.repl/set-refresh-dirs "dev" "src/clj")
 

@@ -14,11 +14,7 @@
             (format "Configuration value not provided: %s" k)))))
 
 (def dev-config
-  {:db     {:host     (config :db-host :default "127.0.0.47")
-            :port     (config :db-port :default "4334" :as integer)
-            :database (config :db-database :default "recipe")
-            :storage  (config :db-storage :default "dev")}
-   :http   {:port (config :http-port :default "8080" :as integer)
+  {:http   {:port (config :http-port :default "8080" :as integer)
             :ip   (config :http-ip :default "127.0.0.1")}
    :github {:client-id     (config :github-client-id)
             :client-secret (config :github-client-secret)

@@ -4,8 +4,8 @@
             [compojure.core :refer [routes GET]]
             [compojure.route :as route]
             [clojure.core.match :as match :refer [match]]
-            [recipe.datomic]
             [recipe.github]
+            [recipe.db]
             [hiccup.page :refer [html5]]
             [recipe.extract]
             [taoensso.timbre :as log]))
@@ -53,7 +53,7 @@
                          :as req}
          (let [access-token (recipe.github/access-token github code)
                user (recipe.github/user github access-token)]
-           (recipe.datomic/add-or-update-user! (:conn db) user access-token)
+           (recipe.db/add-or-update-user! db user access-token)
            {:status 307
             :headers {"Location" "/"}
             :body ""
@@ -72,7 +72,7 @@
 
 (defmethod handle-event :app/logged-in-user [{:keys [ring-req db]}]
   (let [uid (get-in ring-req [:session :uid])]
-    {:result (recipe.datomic/get-user (:conn db) uid)}))
+    {:result (recipe.db/get-user db uid)}))
 
 (defmethod handle-event :import/start [{:keys [?data]}]
   {:result (recipe.extract/parse ?data)})

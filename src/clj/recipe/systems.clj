@@ -7,7 +7,6 @@
             [taoensso.timbre :as log]
             [system.components
              [http-kit :refer [new-web-server]]
-             [datomic :refer [new-datomic-db]]
              [sente :refer [new-channel-sockets sente-routes]]
              [endpoint :refer [new-endpoint]]
              [handler :refer [new-handler]]
@@ -16,12 +15,8 @@
 (defn routes []
   (component/using (new-endpoint ring-handler) [:db :github]))
 
-(defn db [{:keys [host port database storage]}]
-  (new-datomic-db (format "datomic:%s://%s:%d/%s"
-                          storage
-                          host
-                          port
-                          database)))
+(defn db [config]
+  (atom {:next-id 0}))
 
 (defn sente-endpoint []
   (component/using
