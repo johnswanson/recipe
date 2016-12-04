@@ -17,7 +17,9 @@
             [system.components
              [watcher :refer [new-watcher]]]
             [recipe.systems]
-            [recipe.config :refer [dev-config]]))
+            [recipe.config :refer [dev-config]]
+            [ragtime.jdbc :as ragtime-jdbc]
+            [ragtime.repl :refer [migrate rollback]]))
 
 (clojure.tools.namespace.repl/set-refresh-dirs "dev" "src/clj")
 
@@ -66,3 +68,10 @@
 
 (reloaded.repl/set-init! dev-system)
 
+
+(defn ragtime-config []
+  {:datastore (ragtime-jdbc/sql-database (:db dev-config))
+   :migrations (ragtime-jdbc/load-resources "migrations")})
+
+(defn migrate! [] (migrate (ragtime-config)))
+(defn rollback! [] (rollback (ragtime-config)))

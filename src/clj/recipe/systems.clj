@@ -7,6 +7,7 @@
             [taoensso.timbre :as log]
             [system.components
              [http-kit :refer [new-web-server]]
+             [postgres :refer [new-postgres-database]]
              [sente :refer [new-channel-sockets sente-routes]]
              [endpoint :refer [new-endpoint]]
              [handler :refer [new-handler]]
@@ -16,7 +17,7 @@
   (component/using (new-endpoint ring-handler) [:db :github]))
 
 (defn db [config]
-  (atom {:next-id 0}))
+  (new-postgres-database config))
 
 (defn sente-endpoint []
   (component/using

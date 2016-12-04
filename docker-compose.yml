@@ -1,0 +1,10 @@
+version: '2'
+services:
+  pg:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=dev
+      - POSTGRES_PASSWORD=dev
+      - POSTGRES_DB=recipe
+    ports:
+      - "127.0.0.47:5432:5432"
